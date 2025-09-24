@@ -47,6 +47,72 @@ export default function ClientDashboard() {
     status: string;
   }>>([])
   const [isClient, setIsClient] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  // Mock data for comprehensive dashboard features - using stable seed for consistent SSR/CSR
+  const generateMockDailyData = () => {
+    const data = []
+    const today = new Date()
+    // Use a fixed seed for consistent data generation
+    let seed = 12345
+    
+    const seededRandom = () => {
+      seed = (seed * 9301 + 49297) % 233280
+      return seed / 233280
+    }
+    
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(today)
+      date.setDate(date.getDate() - i)
+      if (date.getDay() >= 1 && date.getDay() <= 5) { // Monday to Friday only
+        data.push({
+          date: date.toISOString().split('T')[0],
+          calls: Math.floor(seededRandom() * 200) + 100,
+          connects: Math.floor(seededRandom() * 50) + 20,
+          leads: Math.floor(seededRandom() * 15) + 5,
+          hotLeads: Math.floor(seededRandom() * 8) + 2,
+          warmLeads: Math.floor(seededRandom() * 5) + 1,
+          coldLeads: Math.floor(seededRandom() * 3) + 1,
+          leadNotes: `Day ${30-i} performance notes`,
+          commentary: `Strong performance on ${date.toISOString().split('T')[0]}`
+        })
+      }
+    }
+    return data
+  }
+
+  const generateMockLeads = () => {
+    const leads = []
+    const names = ['John Smith', 'Sarah Johnson', 'Mike Davis', 'Lisa Wilson', 'David Brown', 'Emma Taylor', 'Chris Anderson', 'Maria Garcia']
+    const addresses = ['123 Main St', '456 Oak Ave', '789 Pine Rd', '321 Elm St', '654 Maple Dr', '987 Cedar Ln', '147 Birch Way', '258 Spruce Ct']
+    const temperatures = ['Hot', 'Warm', 'Cold']
+    const statuses = ['New', 'In Progress', 'Closed']
+    
+    // Use a fixed seed for consistent data generation
+    let seed = 54321
+    
+    const seededRandom = () => {
+      seed = (seed * 9301 + 49297) % 233280
+      return seed / 233280
+    }
+    
+    for (let i = 0; i < 50; i++) {
+      const baseDate = new Date('2024-01-01')
+      baseDate.setDate(baseDate.getDate() + Math.floor(seededRandom() * 365))
+      
+      leads.push({
+        id: i + 1,
+        dateGenerated: baseDate.toISOString().split('T')[0],
+        ownerName: names[Math.floor(seededRandom() * names.length)],
+        phoneNumber: `(555) ${Math.floor(seededRandom() * 900) + 100}-${Math.floor(seededRandom() * 9000) + 1000}`,
+        propertyAddress: addresses[Math.floor(seededRandom() * addresses.length)],
+        leadNotes: `Lead notes for ${names[Math.floor(seededRandom() * names.length)]}`,
+        temperature: temperatures[Math.floor(seededRandom() * temperatures.length)],
+        status: statuses[Math.floor(seededRandom() * statuses.length)]
+      })
+    }
+    return leads
+  }
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,6 +149,7 @@ export default function ClientDashboard() {
   }, [])
 
   useEffect(() => {
+    setMounted(true)
     setIsClient(true)
     setSelectedDate(new Date())
     setDailyData(generateMockDailyData())
@@ -156,70 +223,6 @@ export default function ClientDashboard() {
     return `${Math.round((numerator / denominator) * 100)}%`
   }
 
-  // Mock data for comprehensive dashboard features - using stable seed for consistent SSR/CSR
-  const generateMockDailyData = () => {
-    const data = []
-    const today = new Date()
-    // Use a fixed seed for consistent data generation
-    let seed = 12345
-    
-    const seededRandom = () => {
-      seed = (seed * 9301 + 49297) % 233280
-      return seed / 233280
-    }
-    
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today)
-      date.setDate(date.getDate() - i)
-      if (date.getDay() >= 1 && date.getDay() <= 5) { // Monday to Friday only
-        data.push({
-          date: date.toISOString().split('T')[0],
-          calls: Math.floor(seededRandom() * 200) + 100,
-          connects: Math.floor(seededRandom() * 50) + 20,
-          leads: Math.floor(seededRandom() * 15) + 5,
-          hotLeads: Math.floor(seededRandom() * 8) + 2,
-          warmLeads: Math.floor(seededRandom() * 5) + 1,
-          coldLeads: Math.floor(seededRandom() * 3) + 1,
-          leadNotes: `Day ${30-i} performance notes`,
-          commentary: `Strong performance on ${date.toLocaleDateString()}`
-        })
-      }
-    }
-    return data
-  }
-
-  const generateMockLeads = () => {
-    const leads = []
-    const names = ['John Smith', 'Sarah Johnson', 'Mike Davis', 'Lisa Wilson', 'David Brown', 'Emma Taylor', 'Chris Anderson', 'Maria Garcia']
-    const addresses = ['123 Main St', '456 Oak Ave', '789 Pine Rd', '321 Elm St', '654 Maple Dr', '987 Cedar Ln', '147 Birch Way', '258 Spruce Ct']
-    const temperatures = ['Hot', 'Warm', 'Cold']
-    const statuses = ['New', 'In Progress', 'Closed']
-    
-    // Use a fixed seed for consistent data generation
-    let seed = 54321
-    
-    const seededRandom = () => {
-      seed = (seed * 9301 + 49297) % 233280
-      return seed / 233280
-    }
-    
-    for (let i = 0; i < 50; i++) {
-      const baseDate = new Date('2024-01-01')
-      baseDate.setDate(baseDate.getDate() + Math.floor(seededRandom() * 365))
-      
-      leads.push({
-        id: i + 1,
-        dateGenerated: baseDate.toISOString().split('T')[0],
-        ownerName: names[Math.floor(seededRandom() * names.length)],
-        phoneNumber: `(555) ${Math.floor(seededRandom() * 900) + 100}-${Math.floor(seededRandom() * 9000) + 1000}`,
-        propertyAddress: addresses[Math.floor(seededRandom() * addresses.length)],
-        leadNotes: `Lead notes for ${names[Math.floor(seededRandom() * names.length)]}`,
-        temperature: temperatures[Math.floor(seededRandom() * temperatures.length)],
-        status: statuses[Math.floor(seededRandom() * statuses.length)]
-      })
-    }
-    return leads
-  }
 
   // Helper function to safely get percentage values
   const getPercentageValue = (value: unknown, defaultValue: string = "0%"): string => {
@@ -501,8 +504,19 @@ export default function ClientDashboard() {
   }
 
 
+  // Prevent hydration issues by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 relative overflow-hidden flex items-center justify-center">
+        <div className="bg-slate-800/50 border border-cyan-500/30 rounded-lg p-6 backdrop-blur-sm">
+          <div className="text-cyan-400 font-mono text-sm tracking-wider">LOADING...</div>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 relative overflow-hidden" suppressHydrationWarning>
       {/* Professional Background Effects */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 opacity-60"></div>
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-transparent"></div>

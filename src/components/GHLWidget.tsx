@@ -22,7 +22,7 @@ export default function GHLWidget() {
   }, []);
 
   return (
-    <div className="w-full h-full min-h-[450px] flex items-center justify-center">
+    <div className="w-full h-full min-h-[450px] flex items-center justify-center" suppressHydrationWarning>
       <div
         data-chat-widget
         data-widget-id="68c54621fa0aac6637791517"
@@ -32,6 +32,7 @@ export default function GHLWidget() {
           transform: 'scale(1.75)',
           transformOrigin: 'center center'
         }}
+        suppressHydrationWarning
       />
     </div>
   );
