@@ -6,28 +6,47 @@ import {
   ChartBarIcon,
   CalendarIcon,
   UserGroupIcon,
-  PhoneIcon,
-  ChartPieIcon,
   TableCellsIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
   ArrowDownTrayIcon
 } from "@heroicons/react/24/outline"
 
-type AccountStatus = "Cancelled" | "Active" | "Unknown"
-
 export default function ClientDashboard() {
   const [isLoading, setIsLoading] = useState(false)
-  const [showAllData, setShowAllData] = useState(false)
-  const [airtableData, setAirtableData] = useState<any>(null)
+  const [airtableData, setAirtableData] = useState<{ records: Array<{ fields: Record<string, unknown> }> } | null>(null)
   const [loading, setLoading] = useState(true)
   
   // New state for dashboard features
-  const [selectedDate, setSelectedDate] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedTimeframe, setSelectedTimeframe] = useState<'daily' | 'weekly' | 'monthly'>('daily')
   const [leadSearchTerm, setLeadSearchTerm] = useState('')
   const [leadFilter, setLeadFilter] = useState<'all' | 'hot' | 'warm' | 'cold'>('all')
   const [showLeadDatabase, setShowLeadDatabase] = useState(false)
+
+  // Generate data only on client side to prevent hydration issues
+  const [dailyData, setDailyData] = useState<Array<{
+    date: string;
+    calls: number;
+    connects: number;
+    leads: number;
+    hotLeads: number;
+    warmLeads: number;
+    coldLeads: number;
+    leadNotes: string;
+    commentary: string;
+  }>>([])
+  const [mockLeads, setMockLeads] = useState<Array<{
+    id: number;
+    dateGenerated: string;
+    ownerName: string;
+    phoneNumber: string;
+    propertyAddress: string;
+    leadNotes: string;
+    temperature: string;
+    status: string;
+  }>>([])
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,6 +80,13 @@ export default function ClientDashboard() {
     }
 
     fetchData()
+  }, [])
+
+  useEffect(() => {
+    setIsClient(true)
+    setSelectedDate(new Date())
+    setDailyData(generateMockDailyData())
+    setMockLeads(generateMockLeads())
   }, [])
 
   if (loading) {
@@ -98,7 +124,7 @@ export default function ClientDashboard() {
   })
 
   // Helper function to safely get numeric values
-  const getNumericValue = (value: any, defaultValue: number = 0): number => {
+  const getNumericValue = (value: unknown, defaultValue: number = 0): number => {
     if (typeof value === 'number') return value
     if (typeof value === 'string') {
       const parsed = parseFloat(value.replace(/[,$%]/g, ''))
@@ -106,19 +132,19 @@ export default function ClientDashboard() {
     }
     // Handle error objects and special values
     if (value && typeof value === 'object') {
-      if (value.error) return defaultValue
-      if (value.specialValue === 'NaN') return defaultValue
+      if ('error' in value && value.error) return defaultValue
+      if ('specialValue' in value && value.specialValue === 'NaN') return defaultValue
     }
     return defaultValue
   }
 
   // Helper function to safely get string values
-  const getStringValue = (value: any, defaultValue: string = "N/A"): string => {
+  const getStringValue = (value: unknown, defaultValue: string = "N/A"): string => {
     if (value === null || value === undefined) return defaultValue
     // Handle error objects and special values
     if (value && typeof value === 'object') {
-      if (value.error) return defaultValue
-      if (value.specialValue === 'NaN') return defaultValue
+      if ('error' in value && value.error) return defaultValue
+      if ('specialValue' in value && value.specialValue === 'NaN') return defaultValue
       return defaultValue
     }
     return String(value).trim() || defaultValue
@@ -195,24 +221,13 @@ export default function ClientDashboard() {
     return leads
   }
 
-  // Generate data only on client side to prevent hydration issues
-  const [dailyData, setDailyData] = useState<any[]>([])
-  const [mockLeads, setMockLeads] = useState<any[]>([])
-  const [isClient, setIsClient] = useState(false)
-
-  useEffect(() => {
-    setIsClient(true)
-    setDailyData(generateMockDailyData())
-    setMockLeads(generateMockLeads())
-  }, [])
-
   // Helper function to safely get percentage values
-  const getPercentageValue = (value: any, defaultValue: string = "0%"): string => {
+  const getPercentageValue = (value: unknown, defaultValue: string = "0%"): string => {
     if (value === null || value === undefined) return defaultValue
     // Handle error objects and special values
     if (value && typeof value === 'object') {
-      if (value.error) return defaultValue
-      if (value.specialValue === 'NaN') return defaultValue
+      if ('error' in value && value.error) return defaultValue
+      if ('specialValue' in value && value.specialValue === 'NaN') return defaultValue
       return defaultValue
     }
     if (typeof value === 'number') {
@@ -308,14 +323,6 @@ export default function ClientDashboard() {
     listHealth: getPercentageValue(fields["List Health %"])
   }
 
-  const handleCancel = () => {
-    setIsLoading(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-      alert("Account cancellation request submitted successfully!")
-    }, 2000)
-  }
 
   const handleRefresh = async () => {
     setIsLoading(true)
@@ -493,18 +500,6 @@ export default function ClientDashboard() {
     setIsLoading(false)
   }
 
-  // Get status from Airtable
-  const status = getStringValue(fields["Account Status"], "Unknown")
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "cancelled":
-        return "text-red-400 bg-red-500/10 border-red-500/30"
-      case "active":
-        return "text-green-400 bg-green-500/10 border-green-500/30"
-      default:
-        return "text-cyan-400 bg-cyan-500/10 border-cyan-500/30"
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 relative overflow-hidden">
@@ -593,7 +588,7 @@ export default function ClientDashboard() {
                 </select>
                 <input
                   type="date"
-                  value={selectedDate.toISOString().split('T')[0]}
+                  value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
                   onChange={(e) => setSelectedDate(new Date(e.target.value))}
                   className="px-4 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-slate-300 text-sm"
                 />
@@ -696,7 +691,7 @@ export default function ClientDashboard() {
                 <tbody>
                   {isClient ? dailyData.slice(-10).map((day, index) => (
                     <tr key={index} className="border-b border-slate-700/30 hover:bg-slate-700/30">
-                      <td className="py-3 px-4 text-slate-300">{new Date(day.date).toLocaleDateString()}</td>
+                      <td className="py-3 px-4 text-slate-300">{new Date(day.date).toISOString().split('T')[0]}</td>
                       <td className="py-3 px-4 text-right text-cyan-400 font-medium">{day.calls}</td>
                       <td className="py-3 px-4 text-right text-blue-400 font-medium">{day.connects}</td>
                       <td className="py-3 px-4 text-right text-red-400 font-medium">{day.hotLeads}</td>
@@ -890,7 +885,7 @@ export default function ClientDashboard() {
                         .slice(0, 20)
                         .map((lead) => (
                         <tr key={lead.id} className="border-b border-slate-700/30 hover:bg-slate-700/30">
-                          <td className="py-3 px-4 text-slate-300">{new Date(lead.dateGenerated).toLocaleDateString()}</td>
+                          <td className="py-3 px-4 text-slate-300">{new Date(lead.dateGenerated).toISOString().split('T')[0]}</td>
                           <td className="py-3 px-4 text-cyan-400 font-medium">{lead.ownerName}</td>
                           <td className="py-3 px-4 text-blue-400 font-medium">{lead.phoneNumber}</td>
                           <td className="py-3 px-4 text-slate-300">{lead.propertyAddress}</td>
