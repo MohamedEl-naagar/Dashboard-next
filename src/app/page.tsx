@@ -11,6 +11,9 @@ export default function Home() {
         <Link href="/auth/signup" className="text-green-600 underline">
           Signup
         </Link>
+        <Link href="/data" className="text-purple-600 underline">
+          Data Dashboard
+        </Link>
       </div>
     </main>
   )
