@@ -130,22 +130,30 @@ export default function ClientDashboard() {
     return `${Math.round((numerator / denominator) * 100)}%`
   }
 
-  // Mock data for comprehensive dashboard features
+  // Mock data for comprehensive dashboard features - using stable seed for consistent SSR/CSR
   const generateMockDailyData = () => {
     const data = []
     const today = new Date()
+    // Use a fixed seed for consistent data generation
+    let seed = 12345
+    
+    const seededRandom = () => {
+      seed = (seed * 9301 + 49297) % 233280
+      return seed / 233280
+    }
+    
     for (let i = 29; i >= 0; i--) {
       const date = new Date(today)
       date.setDate(date.getDate() - i)
       if (date.getDay() >= 1 && date.getDay() <= 5) { // Monday to Friday only
         data.push({
           date: date.toISOString().split('T')[0],
-          calls: Math.floor(Math.random() * 200) + 100,
-          connects: Math.floor(Math.random() * 50) + 20,
-          leads: Math.floor(Math.random() * 15) + 5,
-          hotLeads: Math.floor(Math.random() * 8) + 2,
-          warmLeads: Math.floor(Math.random() * 5) + 1,
-          coldLeads: Math.floor(Math.random() * 3) + 1,
+          calls: Math.floor(seededRandom() * 200) + 100,
+          connects: Math.floor(seededRandom() * 50) + 20,
+          leads: Math.floor(seededRandom() * 15) + 5,
+          hotLeads: Math.floor(seededRandom() * 8) + 2,
+          warmLeads: Math.floor(seededRandom() * 5) + 1,
+          coldLeads: Math.floor(seededRandom() * 3) + 1,
           leadNotes: `Day ${30-i} performance notes`,
           commentary: `Strong performance on ${date.toLocaleDateString()}`
         })
@@ -161,26 +169,42 @@ export default function ClientDashboard() {
     const temperatures = ['Hot', 'Warm', 'Cold']
     const statuses = ['New', 'In Progress', 'Closed']
     
+    // Use a fixed seed for consistent data generation
+    let seed = 54321
+    
+    const seededRandom = () => {
+      seed = (seed * 9301 + 49297) % 233280
+      return seed / 233280
+    }
+    
     for (let i = 0; i < 50; i++) {
-      const randomDate = new Date()
-      randomDate.setDate(randomDate.getDate() - Math.floor(Math.random() * 30))
+      const baseDate = new Date('2024-01-01')
+      baseDate.setDate(baseDate.getDate() + Math.floor(seededRandom() * 365))
       
       leads.push({
         id: i + 1,
-        dateGenerated: randomDate.toISOString().split('T')[0],
-        ownerName: names[Math.floor(Math.random() * names.length)],
-        phoneNumber: `(555) ${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`,
-        propertyAddress: addresses[Math.floor(Math.random() * addresses.length)],
-        leadNotes: `Lead notes for ${names[Math.floor(Math.random() * names.length)]}`,
-        temperature: temperatures[Math.floor(Math.random() * temperatures.length)],
-        status: statuses[Math.floor(Math.random() * statuses.length)]
+        dateGenerated: baseDate.toISOString().split('T')[0],
+        ownerName: names[Math.floor(seededRandom() * names.length)],
+        phoneNumber: `(555) ${Math.floor(seededRandom() * 900) + 100}-${Math.floor(seededRandom() * 9000) + 1000}`,
+        propertyAddress: addresses[Math.floor(seededRandom() * addresses.length)],
+        leadNotes: `Lead notes for ${names[Math.floor(seededRandom() * names.length)]}`,
+        temperature: temperatures[Math.floor(seededRandom() * temperatures.length)],
+        status: statuses[Math.floor(seededRandom() * statuses.length)]
       })
     }
     return leads
   }
 
-  const dailyData = generateMockDailyData()
-  const mockLeads = generateMockLeads()
+  // Generate data only on client side to prevent hydration issues
+  const [dailyData, setDailyData] = useState<any[]>([])
+  const [mockLeads, setMockLeads] = useState<any[]>([])
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+    setDailyData(generateMockDailyData())
+    setMockLeads(generateMockLeads())
+  }, [])
 
   // Helper function to safely get percentage values
   const getPercentageValue = (value: any, defaultValue: string = "0%"): string => {
@@ -579,26 +603,36 @@ export default function ClientDashboard() {
             {/* EOD Data Display */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-slate-700/40 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-cyan-400">{dailyData[dailyData.length - 1]?.calls || 0}</div>
+                <div className="text-2xl font-bold text-cyan-400">
+                  {isClient ? (dailyData[dailyData.length - 1]?.calls || 0) : '...'}
+                </div>
                 <div className="text-sm text-slate-400">Calls</div>
             </div>
               <div className="bg-slate-700/40 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-blue-400">{dailyData[dailyData.length - 1]?.connects || 0}</div>
+                <div className="text-2xl font-bold text-blue-400">
+                  {isClient ? (dailyData[dailyData.length - 1]?.connects || 0) : '...'}
+                </div>
                 <div className="text-sm text-slate-400">Connects</div>
               </div>
               <div className="bg-slate-700/40 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-green-400">{dailyData[dailyData.length - 1]?.leads || 0}</div>
+                <div className="text-2xl font-bold text-green-400">
+                  {isClient ? (dailyData[dailyData.length - 1]?.leads || 0) : '...'}
+                </div>
                 <div className="text-sm text-slate-400">Leads</div>
               </div>
               <div className="bg-slate-700/40 rounded-xl p-4 text-center">
-                <div className="text-2xl font-bold text-purple-400">{dailyData[dailyData.length - 1]?.hotLeads || 0}</div>
+                <div className="text-2xl font-bold text-purple-400">
+                  {isClient ? (dailyData[dailyData.length - 1]?.hotLeads || 0) : '...'}
+                </div>
                 <div className="text-sm text-slate-400">Hot Leads</div>
               </div>
               </div>
             
             <div className="mt-4 p-4 bg-slate-700/30 rounded-xl">
               <div className="text-sm text-slate-400 mb-2">Lead Notes & Commentary:</div>
-              <div className="text-slate-300">{dailyData[dailyData.length - 1]?.commentary || "No commentary available"}</div>
+              <div className="text-slate-300">
+                {isClient ? (dailyData[dailyData.length - 1]?.commentary || "No commentary available") : "Loading..."}
+              </div>
             </div>
           </div>
         </div>
@@ -660,7 +694,7 @@ export default function ClientDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {dailyData.slice(-10).map((day, index) => (
+                  {isClient ? dailyData.slice(-10).map((day, index) => (
                     <tr key={index} className="border-b border-slate-700/30 hover:bg-slate-700/30">
                       <td className="py-3 px-4 text-slate-300">{new Date(day.date).toLocaleDateString()}</td>
                       <td className="py-3 px-4 text-right text-cyan-400 font-medium">{day.calls}</td>
@@ -670,7 +704,11 @@ export default function ClientDashboard() {
                       <td className="py-3 px-4 text-right text-blue-400 font-medium">{day.coldLeads}</td>
                       <td className="py-3 px-4 text-right text-green-400 font-medium">{day.leads}</td>
                     </tr>
-                  ))}
+                  )) : (
+                    <tr>
+                      <td colSpan={7} className="py-8 px-4 text-center text-slate-400">Loading data...</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
               </div>
@@ -691,13 +729,17 @@ export default function ClientDashboard() {
               <div className="bg-slate-700/40 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-slate-300 mb-4">Daily Performance Trends</h3>
                 <div className="h-64 flex items-end justify-between gap-1">
-                  {dailyData.slice(-14).map((day, index) => (
+                  {isClient ? dailyData.slice(-14).map((day, index) => (
                     <div key={index} className="flex flex-col items-center gap-2 flex-1">
                       <div className="w-full bg-gradient-to-t from-cyan-500 to-cyan-400 rounded-t" 
                            style={{ height: `${(day.calls / 300) * 200}px` }}></div>
                       <div className="text-xs text-slate-400">{new Date(day.date).getDate()}</div>
               </div>
-                  ))}
+                  )) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400">
+                      Loading chart data...
+                    </div>
+                  )}
               </div>
                 <div className="mt-4 text-sm text-slate-400">Calls per Day (Last 14 Days)</div>
               </div>
@@ -716,7 +758,9 @@ export default function ClientDashboard() {
                          style={{ clipPath: 'polygon(50% 50%, 100% 50%, 50% 100%)' }}></div>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-slate-300">{dailyData.reduce((sum, day) => sum + day.leads, 0)}</div>
+                        <div className="text-2xl font-bold text-slate-300">
+                          {isClient ? dailyData.reduce((sum, day) => sum + day.leads, 0) : '...'}
+                        </div>
                         <div className="text-sm text-slate-400">Total Leads</div>
               </div>
               </div>
@@ -743,19 +787,19 @@ export default function ClientDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-slate-700/40 rounded-xl p-4 text-center">
                 <div className="text-3xl font-bold text-green-400 mb-2">
-                  {calculatePercentage(dailyData[dailyData.length - 1]?.connects || 0, dailyData[dailyData.length - 1]?.calls || 1)}
+                  {isClient ? calculatePercentage(dailyData[dailyData.length - 1]?.connects || 0, dailyData[dailyData.length - 1]?.calls || 1) : '...'}
             </div>
                 <div className="text-sm text-slate-400">Connect Rate</div>
               </div>
               <div className="bg-slate-700/40 rounded-xl p-4 text-center">
                 <div className="text-3xl font-bold text-blue-400 mb-2">
-                  {calculatePercentage(dailyData[dailyData.length - 1]?.leads || 0, dailyData[dailyData.length - 1]?.connects || 1)}
+                  {isClient ? calculatePercentage(dailyData[dailyData.length - 1]?.leads || 0, dailyData[dailyData.length - 1]?.connects || 1) : '...'}
               </div>
                 <div className="text-sm text-slate-400">Lead Conversion Rate</div>
               </div>
               <div className="bg-slate-700/40 rounded-xl p-4 text-center">
                 <div className="text-3xl font-bold text-purple-400 mb-2">
-                  {calculatePercentage(dailyData[dailyData.length - 1]?.leads || 0, dailyData[dailyData.length - 1]?.calls || 1)}
+                  {isClient ? calculatePercentage(dailyData[dailyData.length - 1]?.leads || 0, dailyData[dailyData.length - 1]?.calls || 1) : '...'}
                 </div>
                 <div className="text-sm text-slate-400">Raw Lead Rate</div>
               </div>
@@ -836,7 +880,7 @@ export default function ClientDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {mockLeads
+                      {isClient ? mockLeads
                         .filter(lead => {
                           const matchesSearch = lead.ownerName.toLowerCase().includes(leadSearchTerm.toLowerCase()) ||
                                               lead.propertyAddress.toLowerCase().includes(leadSearchTerm.toLowerCase())
@@ -870,18 +914,22 @@ export default function ClientDashboard() {
                             </span>
                           </td>
                         </tr>
-                      ))}
+                      )) : (
+                        <tr>
+                          <td colSpan={7} className="py-8 px-4 text-center text-slate-400">Loading lead data...</td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
               </div>
                 
                 <div className="mt-4 text-sm text-slate-400 text-center">
-                  Showing {Math.min(20, mockLeads.filter(lead => {
+                  {isClient ? `Showing ${Math.min(20, mockLeads.filter(lead => {
                     const matchesSearch = lead.ownerName.toLowerCase().includes(leadSearchTerm.toLowerCase()) ||
                                         lead.propertyAddress.toLowerCase().includes(leadSearchTerm.toLowerCase())
                     const matchesFilter = leadFilter === 'all' || lead.temperature.toLowerCase() === leadFilter
                     return matchesSearch && matchesFilter
-                  }).length)} of {mockLeads.length} leads
+                  }).length)} of ${mockLeads.length} leads` : 'Loading lead count...'}
               </div>
               </>
             )}
